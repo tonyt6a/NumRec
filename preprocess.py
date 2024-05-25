@@ -5,6 +5,11 @@ from keras._tf_keras.keras.datasets import mnist
 
 (train_data, train_labels), (test_data, test_labels) = mnist.load_data()
 
+indices = np.random.permutation(len(train_data))
+
+train_data = train_data[indices]
+train_labels = train_labels[indices]
+
 print('X_train: ' + str(train_data.shape))
 print('Y_train: ' + str(train_labels.shape))
 print('X_test:  '  + str(test_data.shape))
