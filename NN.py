@@ -18,7 +18,8 @@ def feed_forward(input_vector):
 
 
 
-
+def normalize_input(input):
+    return input / 255.0
      
 def train_batch(start, batch_length, learning_rate):
     """ 
@@ -41,36 +42,21 @@ def train_batch(start, batch_length, learning_rate):
     while i < (start + batch_length):
         # flatten input value into column vector
         input_vector = (np.array(preprocess.train_data[i]).flatten()).T
+        input_vector = normalize_input(input_vector)
         # feed forward and get activations for input vector
         hidden_activation, output_vector = feed_forward(input_vector)
         # Make expected vector
         activation_hat = np.zeros(10,) # vector with 10 digits
         activation_hat[preprocess.train_labels[i],] = 1 # set actual label to 1 (rest will be 0)
-        # instantiate deltas for output neurons
-        output_delta = []
-        # summation for all deltas in output weights/biases
-        # iterating through neurons of output layer 0 - 9
-        for j in range(len(output_weights_delta)):
-            # getting delta from neuron in output layer using activation and expected
-            # add delta for hidden layer delta
-            output_delta += [get_output_delta(output_vector[j], activation_hat[j])]
-            # getting bias delta
-            output_biases_delta[j,] += output_delta[j]
-            # iterating through columns of a row in output_weights_delta
-            for k in range(len(output_weights_delta[j])):
-                output_weights_delta[j,k] += output_delta[j] * hidden_activation[k,] # changed
-        # summation for all deltas in hidden layer 0 - 15
-        for j in range(len(first_weights_delta)):
-            # solve each delta per row
-            row_delta = 0
-            # get delta for current layer using output layer
-            for k in range(output_weights.shape[0]):
-                row_delta += output_delta[k] * output_weights[k, j] * hidden_activation[j, ] * (1 - hidden_activation[j,])
-            # add delta to bias
-            first_biases_delta[j,] += row_delta
-            # iterating through all weights affecting a hidden layer neuron 0 - 783
-            for k in range(len(first_weights_delta[j])):
-                first_weights_delta[j,k] += row_delta * input_vector[k,] # changed
+        # delta for output neurons
+        output_delta = get_output_delta(output_vector, activation_hat)
+        # calculated all deltas in output weights/biases
+        output_biases_delta += output_delta
+        output_weights_delta += np.outer(output_delta, hidden_activation)
+        # calculate hidden layer row delta
+        row_delta = output_delta @ output_weights * hidden_activation * (1 - hidden_activation)
+        first_biases_delta += row_delta
+        first_weights_delta += np.outer(row_delta, input_vector)
         i += 1
       
 
@@ -78,15 +64,16 @@ def train_batch(start, batch_length, learning_rate):
     output_biases_delta /= batch_length
     first_weights_delta /= batch_length
     first_biases_delta /= batch_length
-    first_weights = first_weights - learning_rate * first_weights_delta
-    first_biases = first_biases - learning_rate * first_biases_delta
-    output_weights = output_weights - learning_rate * output_weights_delta
-    output_biases = output_biases - learning_rate * output_biases_delta
+    first_weights = first_weights + learning_rate * first_weights_delta
+    first_biases = first_biases + learning_rate * first_biases_delta
+    output_weights = output_weights + learning_rate * output_weights_delta
+    output_biases = output_biases + learning_rate * output_biases_delta
 
     # TODO feedforward once more (to be changed)
     hidden_activation, output_vector = feed_forward(input_vector)
     activation_hat = np.zeros(10,) # vector with 10 digits
     activation_hat[preprocess.train_labels[i-1],] = 1 # set actual label to 1 (rest will be 0)
+    test_batch(start, batch_length)
     return get_error(output_vector, activation_hat)
 
 
@@ -115,10 +102,15 @@ def test_batch(start, batch_length):
         input_vector = (np.array(preprocess.train_data[i]).flatten()).T
         hidden_activation, output_vector = feed_forward(input_vector)
         activation_hat = np.zeros(10,) # vector with 10 digits
-        activation_hat[preprocess.train_labels[i-1],] = 1 # set actual label to 1 (rest will be 0)
+        activation_hat[preprocess.train_labels[i],] = 1 # set actual label to 1 (rest will be 0)
         error += get_error(output_vector, activation_hat)
         i += 1
     print("Current average error:: ", error / i)
+    if len(batches) == 0:
+        batches.append(1)
+    else:
+        batches.append(batches[-1] + 1)
+    costs.append(error / i)
         
 # CONSTANTS
 TRAINING_DATA_SIZE = preprocess.train_data.shape[0]
@@ -128,7 +120,7 @@ LAYER_SIZE = 16
 BATCH_LENGTH = 1000
 HIDDEN_LAYERS = 1
 COST_THRESHOLD  = 0.000001
-EPOCHS = 15
+EPOCHS = 30
 
 # MAIN STARTS HERE
 first_weights = np.random.rand(LAYER_SIZE, ROWS * COLS) * 2 - 1
@@ -138,9 +130,10 @@ first_biases = np.zeros(LAYER_SIZE,)
 # output_biases = np.random.rand(10,) # there are 10 digits
 output_biases = np.zeros(10,) # there are 10 digits
 i = 0
-learning_rate = 0.42
+learning_rate = 0.1
 j = 0
-# ru
+batches = []
+costs = []
 while i < TRAINING_DATA_SIZE:
     cost = train_batch(i, BATCH_LENGTH, learning_rate)
     # print("Cost:: ", cost)
@@ -153,19 +146,31 @@ while i < TRAINING_DATA_SIZE:
 
     # foo = (cost - COST_THRESHOLD) / COST_THRESHOLD
     # learning_rate = learning_rate * foo
-i = 0
 
 while j < EPOCHS:
+    if j == 15:
+        learning_rate = .01
+    if j == 25:
+        learning_rate = .001
+    i = 0
     while i < TRAINING_DATA_SIZE:
         train_batch(i, BATCH_LENGTH, learning_rate)
         # if learning_rate > .00001:
         #     learning_rate *= .1
         # if (cost < COST_THRESHOLD):
         #     break
-        i += 1000
-        if(i > TRAINING_DATA_SIZE):
-            i = 0
         test_batch(i, BATCH_LENGTH)
+        i += 1000
     j += 1
     print("current epoch", j)
 
+pyplot.plot(batches, costs)
+pyplot.xlabel("Batch")
+pyplot.ylabel("Cost")
+pyplot.title("Average Cost per 1000 Images")
+pyplot.show()
+
+np.save("model.npy", {'first_weights': first_weights,
+                      'output_weights': output_weights,
+                      'first_biases': first_biases,
+                      'output_biases': output_biases})
