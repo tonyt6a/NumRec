@@ -4,6 +4,7 @@ import preprocess
 # will load model to test
 
 LAYER_SIZE = 16
+TRAINING_DATA_SIZE = preprocess.train_data.shape[0]
 
 
 def sigmoid(x):
@@ -35,11 +36,15 @@ first_weights = data['first_weights']
 output_weights = data['output_weights']
 first_biases = data['first_biases']
 output_biases = data['output_biases']
-i = 1
+amt_correct= 0
+for i in range(TRAINING_DATA_SIZE):
+    input_vector = (np.array(preprocess.train_data[i]).flatten()).T
+    hidden_activation, output_vector = feed_forward(input_vector)
+    index_max = 0
+    for j in range(1, len(output_vector)):
+        if output_vector[j] > output_vector[index_max]:
+            index_max = j
+    if index_max == preprocess.train_labels[i]:
+        amt_correct += 1
 
-input_vector = (np.array(preprocess.train_data[i]).flatten()).T
-hidden_activation, output_vector = feed_forward(input_vector)
-activation_hat = np.zeros(10,) # vector with 10 digits
-activation_hat[preprocess.train_labels[i],] = 1 # set actual label to 1 (rest will be 0)
-error = get_error(output_vector, activation_hat)
-print("hi")
+print(f'Amount correct:: {amt_correct}/{TRAINING_DATA_SIZE}\nPercentage:: {amt_correct / TRAINING_DATA_SIZE}')

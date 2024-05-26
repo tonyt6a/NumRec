@@ -29,10 +29,10 @@ def train_batch(start, batch_length, learning_rate):
     global output_biases
     i = start
     # make delta matrices
-    output_weights_change = np.zeros((10, LAYER_SIZE))
-    output_biases_change = np.zeros(10,)
-    first_weights_change = np.zeros((LAYER_SIZE, ROWS * COLS))
-    first_biases_change = np.zeros(LAYER_SIZE,)
+    output_weights_delta = np.zeros((10, LAYER_SIZE))
+    output_biases_delta = np.zeros(10,)
+    first_weights_delta = np.zeros((LAYER_SIZE, ROWS * COLS))
+    first_biases_delta = np.zeros(LAYER_SIZE,)
     # start on batch
     while i < (start + batch_length) and i < TRAINING_DATA_SIZE:
         # flatten input value into column vector
