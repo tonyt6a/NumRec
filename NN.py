@@ -71,7 +71,9 @@ def train_batch(start, batch_length, learning_rate, model, train_data, train_lab
 
 
 
-
+def get_softmax_function(z):
+    beta = 1.0
+    return np.exp(beta * z) / np.sum(np.exp(beta * z)) 
     
 def get_output_delta(activation, activation_hat):
     return (activation - activation_hat) * activation * (1 - activation)

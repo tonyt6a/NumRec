@@ -5,10 +5,11 @@ import numpy as np
 import NN
 from matplotlib import pyplot
 import preprocess
+from tkinter import messagebox
 
 
-width = NN.ROWS * 10  # canvas width
-height = NN.COLS * 10  # canvas height
+width = NN.ROWS * 25  # canvas width
+height = NN.COLS * 25  # canvas height
 black = 0  # background color
 white = 255  # brush color 
 brush_width = 30 
@@ -51,9 +52,8 @@ def save_image():
     for j in range(1, len(output_vector)):
         if output_vector[j] > output_vector[index_max]:
             index_max = j
-    print(index_max)
-    print(output_vector)
-
+    messagebox.showinfo(f"{(NN.get_softmax_function(output_vector)[index_max] * 100)/ np.linalg.norm(NN.get_softmax_function(output_vector)):.2f}% confident", index_max)
+    print()
 
 
     
