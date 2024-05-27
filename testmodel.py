@@ -16,7 +16,7 @@ def get_error(actual, expected):
     for i in range(len(actual)):
         error += (actual[i,] - expected[i,]) ** 2
     return error
-
+ 
 
 data = np.load('model.npy', allow_pickle=True).item()
 

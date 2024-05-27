@@ -23,7 +23,6 @@ def feed_forward(input_vector, model):
     return hidden_activation, output_vector
 
 
-#TODO work with random permutations
 def train_batch(start, batch_length, learning_rate, model, train_data, train_labels):
     """ 
     test_batch tests batches and performs backpropogation.
@@ -45,7 +44,6 @@ def train_batch(start, batch_length, learning_rate, model, train_data, train_lab
     while i < (start + batch_length) and i < TRAINING_DATA_SIZE:
         # flatten input value into column vector
         input_vector = ((np.array(train_data[i]).flatten()).T) / 255
-        norm = np.linalg.norm(input_vector)
         # feed forward and get activations for input vector
         hidden_activation, output_vector = feed_forward(input_vector, model)
         # Make expected vector
@@ -71,11 +69,6 @@ def train_batch(start, batch_length, learning_rate, model, train_data, train_lab
     model.output_weights = model.output_weights - learning_rate * output_weights_delta
     model.output_biases = model.output_biases - learning_rate * output_biases_delta
 
-    # TODO feedforward once more (to be changed)
-    hidden_activation, output_vector = feed_forward(input_vector, model)
-    activation_hat = np.zeros(10,) # vector with 10 digits
-    activation_hat[train_labels[i-1],] = 1 # set actual label to 1 (rest will be 0)
-    return get_error(output_vector, activation_hat)
 
 
 
@@ -95,7 +88,6 @@ def get_error(actual, expected):
         error += (actual[i,] - expected[i,]) ** 2
     return error   
 
-#TODO work with random permutations
 def test_batch(start, batch_length, model,train_data, train_labels):
     i = 0
     error = 0
@@ -121,9 +113,11 @@ def test_batch(start, batch_length, model,train_data, train_labels):
     return error / i
         
 # CONSTANTS
-TRAINING_DATA_SIZE = preprocess.train_data.shape[0]
-ROWS = preprocess.train_data.shape[1]
-COLS = preprocess.train_data.shape[2]
+# ROWS = preprocess.train_data.shape[1]
+# COLS = preprocess.train_data.shape[2]
+ROWS = 28
+COLS = 28
+
 LAYER_SIZE = 16
 BATCH_LENGTH = 16
 HIDDEN_LAYERS = 1
@@ -132,6 +126,8 @@ EPOCHS = 30
 
 # MAIN
 if __name__ == "__main__":
+    TRAINING_DATA_SIZE = preprocess.train_data.shape[0]
+    
     model = Model(first_weights=np.random.randn(LAYER_SIZE, ROWS * COLS) * np.sqrt(2. / (ROWS * COLS)), # 16 x 784
                   output_weights=np.random.randn(10, LAYER_SIZE) * np.sqrt(2. / (ROWS * COLS)), # 10 x 16
                   first_biases=np.zeros(LAYER_SIZE,), # 1 x 16

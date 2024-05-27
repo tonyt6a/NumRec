@@ -3,6 +3,7 @@ from matplotlib import pyplot
 
 from keras._tf_keras.keras.datasets import mnist
 
+
 (train_data, train_labels), (test_data, test_labels) = mnist.load_data()
 
 indices = np.random.permutation(len(train_data))
@@ -22,3 +23,4 @@ print('Y_test:  '  + str(test_labels.shape))
 
 a = np.array(train_data[0])
 # print(a.shape)
+# return train_data, train_labels, test_data, test_labels
