@@ -1,12 +1,18 @@
 import numpy as np
 from matplotlib import pyplot
+import torch
 
 from keras._tf_keras.keras.datasets import mnist
 
 
 (train_data, train_labels), (test_data, test_labels) = mnist.load_data()
+train_data = torch.tensor(train_data, dtype=torch.float32, device='cuda')
+train_labels = torch.tensor(train_labels, dtype=torch.long, device='cuda')
+test_data = torch.tensor(test_data, dtype=torch.float32, device='cuda')
+test_labels = torch.tensor(test_labels, dtype=torch.long, device='cuda')
 
-indices = np.random.permutation(len(train_data))
+
+indices = torch.randperm(len(train_data), device='cuda')
 
 train_data = train_data[indices]
 train_labels = train_labels[indices]
@@ -21,6 +27,5 @@ print('Y_test:  '  + str(test_labels.shape))
 #     pyplot.imshow(train_data[i], cmap=pyplot.get_cmap('gray'))
 # pyplot.show()
 
-a = np.array(train_data[0])
 # print(a.shape)
 # return train_data, train_labels, test_data, test_labels

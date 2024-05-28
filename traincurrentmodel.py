@@ -22,7 +22,7 @@ j = 0
 batches = []
 costs = []
 learning_rate_exp = 1
-learning_rate = .1
+learning_rate = .01
 
 
 while j < EPOCHS:

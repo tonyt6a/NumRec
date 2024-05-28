@@ -8,8 +8,8 @@ import preprocess
 from tkinter import messagebox
 
 
-width = NN.ROWS * 25  # canvas width
-height = NN.COLS * 25  # canvas height
+width = NN.ROWS * 15  # canvas width
+height = NN.COLS * 15  # canvas height
 black = 0  # background color
 white = 255  # brush color 
 brush_width = 30 
