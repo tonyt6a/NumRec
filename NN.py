@@ -3,24 +3,28 @@ from matplotlib import pyplot
 import preprocess
 
 class Model:
-    def __init__(self, first_weights, output_weights, first_biases, output_biases):
+    def __init__(self, first_weights, second_weights, output_weights, first_biases, second_biases, output_biases):
         self.first_weights = first_weights
+        self.second_weights = second_weights
         self.output_weights = output_weights
         self.first_biases = first_biases
+        self.second_biases = second_biases
         self.output_biases = output_biases
 
  
 def feed_forward(input_vector, model):
-    hidden_activation = model.first_weights @ input_vector # hidden layer activations
-    hidden_activation = np.add(hidden_activation, model.first_biases) # add hidden bias
+    first_hidden_activation = model.first_weights @ input_vector # hidden layer activations
+    first_hidden_activation = np.add(first_hidden_activation, model.first_biases) # add hidden bias
     # apply sigmoid on each activation
-    hidden_activation = sigmoid(hidden_activation)
-    output_vector = model.output_weights @ hidden_activation # output layer activation
+    first_hidden_activation = sigmoid(first_hidden_activation)
+    second_hidden_activation = model.second_weights @ first_hidden_activation + model.second_biases
+    second_hidden_activation = sigmoid(second_hidden_activation)
+    output_vector = model.output_weights @ second_hidden_activation # output layer activation
     output_vector = np.add(output_vector, model.output_biases) # add output bias
     # apply sigmoid on output
     output_vector = sigmoid(output_vector)
     # return activations
-    return hidden_activation, output_vector
+    return first_hidden_activation, second_hidden_activation, output_vector
 
 
 def train_batch(start, batch_length, learning_rate, model, train_data, train_labels):
@@ -40,12 +44,14 @@ def train_batch(start, batch_length, learning_rate, model, train_data, train_lab
     output_biases_delta = np.zeros(10,)
     first_weights_delta = np.zeros((LAYER_SIZE, ROWS * COLS))
     first_biases_delta = np.zeros(LAYER_SIZE,)
+    second_weights_delta = np.zeros((LAYER_SIZE, LAYER_SIZE))
+    second_biases_delta = np.zeros(LAYER_SIZE,)
     # start on batch
     while i < (start + batch_length) and i < TRAINING_DATA_SIZE:
         # flatten input value into column vector
-        input_vector = ((np.array(train_data[i]).flatten()).T) / 255
+        input_vector = ((np.array(train_data[i]).flatten()).reshape(-1)) / 255
         # feed forward and get activations for input vector
-        hidden_activation, output_vector = feed_forward(input_vector, model)
+        first_hidden_activation, second_hidden_activation, output_vector = feed_forward(input_vector, model)
         # Make expected vector
         activation_hat = np.zeros(10,) # vector with 10 digits
         activation_hat[train_labels[i],] = 1 # set actual label to 1 (rest will be 0)
@@ -53,21 +59,29 @@ def train_batch(start, batch_length, learning_rate, model, train_data, train_lab
         output_delta = get_output_delta(output_vector, activation_hat)
         # calculated all deltas in output weights/biases
         output_biases_delta += output_delta
-        output_weights_delta += np.outer(output_delta, hidden_activation)
+        output_weights_delta += np.outer(output_delta, second_hidden_activation)
         # calculate hidden layer row delta
-        row_delta = output_delta @ model.output_weights * hidden_activation * (1 - hidden_activation)
-        first_biases_delta += row_delta
-        first_weights_delta += np.outer(row_delta, input_vector)
+        row_delta = output_delta @ model.output_weights * second_hidden_activation * (1 - second_hidden_activation)
+        second_biases_delta += row_delta
+        second_weights_delta += np.outer(row_delta, first_hidden_activation)
+        
+        first_row_delta = row_delta @ model.second_weights * first_hidden_activation * (1 - first_hidden_activation)
+        first_biases_delta += first_row_delta
+        first_weights_delta += np.outer(first_row_delta, input_vector)
         i += 1
 
     output_weights_delta /= batch_length
     output_biases_delta /= batch_length
     first_weights_delta /= batch_length
     first_biases_delta /= batch_length
+    second_weights_delta /= batch_length
+    second_biases_delta /= batch_length
     model.first_weights = model.first_weights - learning_rate * first_weights_delta
     model.first_biases = model.first_biases - learning_rate * first_biases_delta
     model.output_weights = model.output_weights - learning_rate * output_weights_delta
     model.output_biases = model.output_biases - learning_rate * output_biases_delta
+    model.second_weights = model.second_weights - learning_rate * second_weights_delta
+    model.second_biases = model.second_biases - learning_rate * second_biases_delta
 
 
 
@@ -94,8 +108,8 @@ def test_batch(start, batch_length, model,train_data, train_labels):
     i = 0
     error = 0
     while i < (start + batch_length) and i < TRAINING_DATA_SIZE:
-        input_vector = (np.array(train_data[i]).flatten()).T / 255
-        hidden_activation, output_vector = feed_forward(input_vector, model)
+        input_vector = (np.array(train_data[i]).flatten().reshape(-1)) / 255
+        first_hidden_activation, second_hidden_activation, output_vector = feed_forward(input_vector, model)
         activation_hat = np.zeros(10,) # vector with 10 digits
         activation_hat[train_labels[i],] = 1 # set actual label to 1 (rest will be 0)
         error += get_error(output_vector, activation_hat)
@@ -119,37 +133,31 @@ def test_batch(start, batch_length, model,train_data, train_labels):
 # COLS = preprocess.train_data.shape[2]
 ROWS = 28
 COLS = 28
-
+TRAINING_DATA_SIZE = preprocess.train_data.shape[0]
 LAYER_SIZE = 16
-BATCH_LENGTH = 16
-HIDDEN_LAYERS = 1
+BATCH_LENGTH = 64
+HIDDEN_LAYERS = 2
 COST_THRESHOLD  = 0.000001
-EPOCHS = 30
+EPOCHS = 60
 
 # MAIN
 if __name__ == "__main__":
-    TRAINING_DATA_SIZE = preprocess.train_data.shape[0]
     
     model = Model(first_weights=np.random.randn(LAYER_SIZE, ROWS * COLS) * np.sqrt(2. / (ROWS * COLS)), # 16 x 784
+                  second_weights=np.random.randn(LAYER_SIZE, LAYER_SIZE) * np.sqrt(2. / (ROWS * COLS)),
                   output_weights=np.random.randn(10, LAYER_SIZE) * np.sqrt(2. / (ROWS * COLS)), # 10 x 16
-                  first_biases=np.zeros(LAYER_SIZE,), # 1 x 16
-                  output_biases=np.zeros(10,)) # 1 x 10
+                  first_biases=np.zeros(LAYER_SIZE,), # 16 x 1
+                  second_biases=np.zeros(LAYER_SIZE), # 16 x 1
+                  output_biases=np.zeros(10,)) # 10 x 1
     # there are 10 digits
     i = 0
     j = 0
     batches = []
     costs = []
-    learning_rate_exp = 1
-    learning_rate = 10 ** -learning_rate_exp
-    while i < TRAINING_DATA_SIZE:
-        train_batch(i, BATCH_LENGTH, learning_rate, model)
-        test_batch(i, BATCH_LENGTH, model)
-        # if i % 3200 == 0:
-        #     print("Current index:: ", i)
-        # i += BATCH_LENGTH 
-
-        # foo = (cost - COST_THRESHOLD) / COST_THRESHOLD
-        # learning_rate = learning_rate * foo
+    learning_rate = 1
+    while i < 1000:
+        train_batch(i, BATCH_LENGTH, learning_rate, model, preprocess.train_data, preprocess.train_labels)
+        test_batch(i, BATCH_LENGTH, model, preprocess.train_data, preprocess.train_labels)
         i += BATCH_LENGTH
     indices = np.random.permutation(len(preprocess.train_data))
 
@@ -157,22 +165,20 @@ if __name__ == "__main__":
     train_labels = preprocess.train_labels[indices]
     i = 0
     while j < EPOCHS:
-        if j == 15:
-            learning_rate = .01
-        if j == 25:
-            learning_rate = .001
+        # if j == 15:
+        #     learning_rate = .01
+        # if j == 25:
+        #     learning_rate = .001
         i = 0
-        while i < TRAINING_DATA_SIZE:
+        while i < 1000:
             train_batch(i, BATCH_LENGTH, learning_rate, model, train_data, train_labels)
-            # if learning_rate > .00001:
-            #     learning_rate *= .1
-            # if (cost < COST_THRESHOLD):
-            #     break
             test_batch(i, BATCH_LENGTH, model, train_data, train_labels)
             i += BATCH_LENGTH
         indices = np.random.permutation(len(preprocess.train_data))
         train_data = preprocess.train_data[indices]
         train_labels = preprocess.train_labels[indices]
+        train_data = np.ascontiguousarray(train_data)
+        train_labels = np.ascontiguousarray(train_labels)
         j += 1
         print("current epoch", j)
 
@@ -183,6 +189,8 @@ if __name__ == "__main__":
     pyplot.show()
 
     np.save("model.npy", {'first_weights': model.first_weights,
+                          'second_weights': model.second_weights,
                         'output_weights': model.output_weights,
                         'first_biases': model.first_biases,
+                        'second_biases': model.second_biases,
                         'output_biases': model.output_biases})

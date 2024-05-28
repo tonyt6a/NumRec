@@ -10,6 +10,8 @@ indices = np.random.permutation(len(train_data))
 
 train_data = train_data[indices]
 train_labels = train_labels[indices]
+train_data = np.ascontiguousarray(train_data)
+train_labels = np.ascontiguousarray(train_labels)
 
 print('X_train: ' + str(train_data.shape))
 print('Y_train: ' + str(train_labels.shape))

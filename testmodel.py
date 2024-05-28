@@ -21,15 +21,22 @@ def get_error(actual, expected):
 data = np.load('model.npy', allow_pickle=True).item()
 
 first_weights = data['first_weights']
+second_weights = data['second_weights']
 output_weights = data['output_weights']
 first_biases = data['first_biases']
+second_biases = data['second_biases']
 output_biases = data['output_biases']
 training_amt_correct= 0
 test_amt_correct = 0
-model = NN.Model(first_weights, output_weights, first_biases, output_biases)
+model = NN.Model(first_weights,
+                 second_weights,
+                 output_weights,
+                 first_biases,
+                 second_biases,
+                 output_biases)
 for i in range(TRAINING_DATA_SIZE):
     input_vector = (np.array(preprocess.train_data[i]).flatten()).T
-    hidden_activation, output_vector = NN.feed_forward(input_vector, model)
+    first_hidden_activation, second_hidden_activation, output_vector = NN.feed_forward(input_vector, model)
     index_max = 0
     for j in range(1, len(output_vector)):
         if output_vector[j] > output_vector[index_max]:
@@ -38,7 +45,7 @@ for i in range(TRAINING_DATA_SIZE):
         training_amt_correct += 1
 for i in range(preprocess.test_data.shape[0]):
     input_vector = (np.array(preprocess.test_data[i]).flatten()).T
-    hidden_activation, output_vector = NN.feed_forward(input_vector, model)
+    first_hidden_activation, second_hidden_activation, output_vector = NN.feed_forward(input_vector, model)
     index_max = 0
     for j in range(1, len(output_vector)):
         if output_vector[j] > output_vector[index_max]:
