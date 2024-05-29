@@ -31,7 +31,6 @@ learning_rate = 1
 
 while j < EPOCHS:
     indices = np.random.permutation(len(preprocess.train_data))
-
     train_data = preprocess.train_data[indices]
     train_labels = preprocess.train_labels[indices]
     train_data = np.ascontiguousarray(train_data)
@@ -54,8 +53,6 @@ while j < EPOCHS:
         train_data = np.concatenate((train_data[1000:], train_data[:1000]))
         train_labels = np.concatenate((train_labels[1000:], train_labels[:1000]))
         i = 0
-    # indices = np.random.permutation(len(preprocess.train_data))
-    # train_labels = preprocess.train_labels[indices]
     j += 1
     print("current epoch", j)
 

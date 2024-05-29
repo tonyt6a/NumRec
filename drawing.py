@@ -56,6 +56,7 @@ def save_image():
     for j in range(1, len(output_vector)):
         if output_vector[j] > output_vector[index_max]:
             index_max = j
+    print(output_vector)
     messagebox.showinfo(f"{(NN.get_softmax_function(output_vector)[index_max] * 100)/ np.linalg.norm(NN.get_softmax_function(output_vector)):.2f}% confident", index_max)
     print(np.linalg.norm(NN.get_softmax_function(output_vector)))
 

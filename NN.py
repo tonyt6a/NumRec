@@ -138,7 +138,7 @@ LAYER_SIZE = 16
 BATCH_LENGTH = 64
 HIDDEN_LAYERS = 2
 COST_THRESHOLD  = 0.000001
-EPOCHS = 60
+EPOCHS = 30
 
 # MAIN
 if __name__ == "__main__":
@@ -155,25 +155,32 @@ if __name__ == "__main__":
     batches = []
     costs = []
     learning_rate = 1
-    while i < 1000:
-        train_batch(i, BATCH_LENGTH, learning_rate, model, preprocess.train_data, preprocess.train_labels)
-        test_batch(i, BATCH_LENGTH, model, preprocess.train_data, preprocess.train_labels)
-        i += BATCH_LENGTH
+    for k in range(int(TRAINING_DATA_SIZE / 1000)):
+        print("Real index", k)
+        while i < 1000:
+            train_batch(i, BATCH_LENGTH, learning_rate, model, preprocess.train_data, preprocess.train_labels)
+            test_batch(i, BATCH_LENGTH, model, preprocess.train_data, preprocess.train_labels)
+            i += BATCH_LENGTH
+        train_data = np.concatenate((preprocess.train_data[1000:], preprocess.train_data[:1000]))
+        train_labels = np.concatenate((preprocess.train_labels[1000:], preprocess.train_labels[:1000]))
+        i = 0
     indices = np.random.permutation(len(preprocess.train_data))
-
     train_data = preprocess.train_data[indices]
     train_labels = preprocess.train_labels[indices]
+    train_data = np.ascontiguousarray(train_data)
+    train_labels = np.ascontiguousarray(train_labels)
     i = 0
     while j < EPOCHS:
-        # if j == 15:
-        #     learning_rate = .01
-        # if j == 25:
-        #     learning_rate = .001
         i = 0
-        while i < 1000:
-            train_batch(i, BATCH_LENGTH, learning_rate, model, train_data, train_labels)
-            test_batch(i, BATCH_LENGTH, model, train_data, train_labels)
-            i += BATCH_LENGTH
+        for k in range(int(TRAINING_DATA_SIZE / 1000)):
+            print("Real index", k)
+            while i < 1000:
+                train_batch(i, BATCH_LENGTH, learning_rate, model, train_data, train_labels)
+                test_batch(i, BATCH_LENGTH, model, train_data, train_labels)
+                i += BATCH_LENGTH
+            train_data = np.concatenate((train_data[1000:], train_data[:1000]))
+            train_labels = np.concatenate((train_labels[1000:], train_labels[:1000]))
+            i = 0
         indices = np.random.permutation(len(preprocess.train_data))
         train_data = preprocess.train_data[indices]
         train_labels = preprocess.train_labels[indices]
